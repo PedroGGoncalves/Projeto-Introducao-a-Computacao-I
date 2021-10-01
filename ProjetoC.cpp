@@ -1,3 +1,4 @@
+/*atenção tem um problema na situação do carro (alugado, devolvido), que ainda nao foi corrigida*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
