@@ -9,4 +9,9 @@ O projeto pode ser visto em ProjetoC.cpp
 
 Além disso, tem outros documentos úteis no desenvolvimento do projeto.
 
-projeto.pdf
+projeto.pdf - Esse documento contém o que deve ser feito.
+
+projeto_complemento.docx - É um documento que apresenta informações que auxiliam no desenvolvimento do projeto.
+
+Casos de testes.txt - Aqui há as entradas e as saídas esperadas, para testar o código.
+
