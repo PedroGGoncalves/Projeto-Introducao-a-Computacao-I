@@ -1,8 +1,16 @@
-/*atenção tem um problema na situação do carro (alugado, devolvido), que ainda nao foi corrigida*/
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <locale.h>
+#include <string.h>
 
+//Enums
+typedef enum e_cor { 	PRETA=1, BRANCA, PRATA } cor;
+typedef enum e_categoria {	HATCH =1,SEDAN,SUV,JIPE} categoria_e;
+
+//Union
+union opcao {	int x;};
+
+//Structs
 typedef struct s_endereco
 {
 	char rua[50];
@@ -16,961 +24,784 @@ typedef struct s_cliente
 	char nome[50];
 	endereco e;
 	char telefone[15];
+	int tipo_pessoa;
 	char pessoa[20];
 	int situacao;	
 } cliente;
 
-typedef enum e_cores { PRETA=1, BRANCA, PRATA } cores;
-
-typedef enum e_categorias {	HATCH =1,SEDAN,SUV,JIPE	} categorias;
-
-typedef struct s_carro 
-{
-	char renavam[15];
-	char placa[15];  
+typedef struct s_carro{
+	char renavan[15];
+	char placa[15];
 	char marca[50];
 	char modelo[50];
 	int ano;
-	int cor; 
-	int categoria; 
+	cor tipo_cor;
+	categoria_e tipo_categoria;
+	int situacao;
 } carro;
 
-typedef struct u_categorias 
-{
-	int c;	
+typedef struct s_categoria{
+	int categoria;
 	float valor;
 	int pontos;
-	
-} categorias_u;	
-typedef struct s_locacao
-{
+} categoria;
+
+typedef struct s_locacao{
 	int codigo;
-	int  tipo_cliente;
-	char pessoa[20]; 
-	char renavan[15]; 
-	int dia;
-	int mes;
-	int ano;
-	int devolucaodia;
-	int devolucaomes;
-	int devolucaoano;
+	int tipo_pessoa;
+	char pessoa[20];
+	char renavan[15];
+	int dia_retirada;
+	int mes_retirada;
+	int ano_retirada;
+	int dia_devolucao;
+	int mes_devolucao;
+	int ano_devolucao;
 	int situacao;
-	int contador;
-	
-}locacao;
+	int qtd;
+	categoria_e tipo_categoria;
+	char nome[50];
+} locacao;
 
-union opcao
-{
-	int x;
-};
+//Globais referente ao tamanho dos arrays
+const int tam_cliente = 15;
+const int tam_carro = 10;
+const int tam_categoria = 4;
+const int tam_locacao = 5;
 
-int cadastra_cliente (cliente *c,int *pos,locacao l[][5])
-{
-	int i=*pos,j,aux;
-	
-	scanf(" %d",&aux);
-	if (aux!=1 && aux!=2)
-	{	
-		return 2;
+//Funções de consulta simples
+int consultaTipoCliente (int tipo){
+	if (tipo!=1 && tipo!=2){
+		printf("ERRO: opcao invalida\n");
+		return 0;
 	}
-	scanf(" %s", c[i].pessoa);
-	
-	for (j=0; j<*pos; j++)
-	  	  	if (strcmp(c[i].pessoa,c[j].pessoa)==0)
-	  	  	  return 0;
-	
-	if (strlen("XXX.XXX.XXX-XX")==strlen(c[i].pessoa))
-	{
-		l[i][0].tipo_cliente=1;
-	}
-	else if (strlen("XX.XXX.XXX/XXXX-XX")==strlen(c[i].pessoa))
-	{
-		l[i][0].tipo_cliente=2;
-	}
-
-	scanf(" %[^\n]%*c", c[i].nome);
-	scanf(" %[^\n]%*c", c[i].e.rua);
-	scanf(" %d",&c[i].e.numero);
-	scanf(" %[^\n]%*c", c[i].e.bairro);
-	scanf(" %[^\n]%*c", c[i].e.cidade);
-	scanf(" %s", c[i].telefone);
-	c[i].situacao=0;
-	*pos = *pos + 1;
 	return 1;
 }
-int cadastra_carro (carro *car,int *pos)
-{
-	int i=*pos, j;
-	
-	scanf(" %s", car[i].renavam);
-	
-	for (j=0; j<*pos; j++)
-	  	  	if (strcmp(car[i].renavam,car[j].renavam)==0)
-	  	  	  return 0;
-		
-	scanf(" %d",&car[i].categoria);
-	
-	switch (car[i].categoria) 
-		{
-			case HATCH: break; 
-			case SEDAN: break;
-			case SUV: break;
-			case JIPE: break;
-			default: return 2;
+
+int consultaCadastroCliente (cliente *c, int **i){
+	for (int j=0;j<**i;j++){
+		if(strcmp(c[**i].pessoa,c[j].pessoa)==0){
+			printf("ERRO: ja cadastrado\n");
+			return 0;
 		}
-	scanf(" %d",&car[i].cor);  
-	switch (car[i].cor)
-		{
-			case PRETA: break;
-			case BRANCA: break;
-			case PRATA: break;
-			default: return 2;
-		}
-	
-	scanf(" %s", car[i].placa);
-	scanf(" %[^\n]%*c", car[i].marca);
-	scanf(" %[^\n]%*c", car[i].modelo);
-	scanf (" %d",&car[i].ano);
-	
-	*pos = *pos + 1;
+	}
 	return 1;
 }
-int cadastra_categoria(categorias_u *cat,int *pos)
-{
-	int i= *pos, j;
-	
-	scanf(" %d",&cat[i].c);
-	
-	for (j=0; j<*pos; j++)
-	  	  	if (cat[i].c==cat[j].c)
-	  	  	  return 0;
-	
-	switch (cat[i].c)
+
+int consultaCadastroCarro (carro *c, int **i){
+	for(int j=0; j<**i;j++){
+		if(strcmp(c[**i].renavan,c[j].renavan)==0)
+		{
+			printf("ERRO: ja cadastrado\n");
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int consultaCadastroCategoria(categoria *c,int **i){
+	for(int j; j<**i;j++){
+		if(c[**i].categoria==c[j].categoria)
+		{
+			printf("ERRO: ja cadastrado\n");
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int consultaTipoCategoria(carro *c,int **i){
+	switch (c[**i].tipo_categoria)
 	{
 		case HATCH: break;
 		case SEDAN: break;
 		case SUV: break;
 		case JIPE: break;
-		default: return 2;
+		default: printf("ERRO: opcao invalida\n"); return 0; 
 	}
-	scanf(" %f",&cat[i].valor);     
-	scanf(" %d",&cat[i].pontos);  
-	
-	*pos = *pos + 1;	
 	return 1;
 }
 
-int cadastra_loc(locacao l[][5],int *pos,int *poss,cliente *c,carro *car, int *v, int *cod,int *ve,int *conti,int *carr) 
-{
-	int i=*pos, j=*poss,k=0,z=0,cont=0,aux=0;
-	char pessoa[20];
-	
-	scanf (" %s", l[i][j].renavan);
-	for (k=0;k<15;k++)
+int consultaTipoCategoria2(categoria *c,int **i){
+	switch (c[**i].categoria)
 	{
-		for (z=0;z<5;z++)
-		{
-			
-			if (strcmp (l[i][j].renavan,l[k][z].renavan)==0)
-			{
-				
-				if (l[k][z].situacao==2)
-				{
-					for (k=0; k<*carr; k++)
-					{
-					if (strcmp (l[i][j].renavan,car[k].renavam)==0)
-					{	
-					v[k]=0;
-					}
-				
-					}
-				}
-			}
-		}
+		case HATCH: break;
+		case SEDAN: break;
+		case SUV: break;
+		case JIPE: break;
+		default: printf("ERRO: opcao invalida\n"); return 0; 
 	}
-	
-	for (k=0; k<*carr; k++)
-	{
-		if (strcmp (l[i][j].renavan,car[k].renavam)==0)
-		{
-			cont = 1;
-			v[k]=v[k]+1;
-			l[i][j].contador=car[k].categoria;
-			if (v[k]>1)
-			{
-				printf ("ERRO!: locacao em aberto\n");
-				printf("k:%d",&k);
-				return 4;
-			}
-			break;
-		}
-	}
-
-	if (cont==0)
-	{
-		return 0;
-	} cont=0;
-	
-	scanf (" %d",&aux); 
-	
-	if (aux!=1 && aux!=2) 
-	{
-		for (k=0; k<*carr; k++)
-	{
-		if (strcmp (l[i][j].renavan,car[k].renavam)==0)
-		{
-			v[k]=v[k]-1;
-			break;
-		}
-	}	return 2;
-	}
-
-	scanf(" %s", pessoa); 
-	
-	for (k=0;k<*pos;k++)
-	{
-		for (z=0;z<*poss;z++)
-		{
-			if (strcmp (l[i][j].renavan,l[k][z].renavan)==0)
-			{
-				ve[k]=0;
-				if (l[k][z].situacao==2)
-				{
-					for (k=0; k<*conti; k++)
-					{
-						printf ("aaaaaa");
-					if (strcmp (pessoa,c[k].pessoa)==0)
-					{
-					ve[k]=0;
-					printf("AAA%s",c[k].pessoa);
-					}
-					}
-				}
-			}
-		}
-	}
-	for(k=0;k<*conti;k++) //att erro no ve[k] por algum motivo tem 1 e n era pra ter
-	{
-		printf("%d %sc \n",ve[k],c[k].pessoa);
-	}
-	for (k=0; k<*conti; k++)
-	{
-		
-		if (strcmp (pessoa,c[k].pessoa)==0)
-		{
-			cont = 1;
-			c[k].situacao=1;
-			printf("%d %da\n",ve[k],k);
-			ve[k]=ve[k]+1;
-			printf("%d %da\n",ve[k],k);
-			if (ve[k]>1)
-			{
-				for (k=0; k<*carr; k++)
-				{
-				if (strcmp (l[i][j].renavan,car[k].renavam)==0)
-				{
-				v[k]=v[k]-1;
-			
-				break;
-				}
-				}
-				printf ("ERRO: locacao em aberto\n");
-				printf("k:%d\n",k);
-				return 4;
-			} 		
-			break;
-		}
-	}
-	if (cont==0)
-	{
-		for (k=0; k<*carr; k++)
-	{
-		if (strcmp (l[i][j].renavan,car[k].renavam)==0)
-		{
-			v[k]=v[k]-1;
-			
-			break;
-		}
-	}
-		return 0; 
-	}
-	cont=0;
-	
-	l[i][j].situacao =1;
-	l[i][j].tipo_cliente=aux;
-	l[i][j].codigo=1001+*cod;
-	strcpy (l[i][j].pessoa,pessoa);
-	scanf (" %d", &l[i][j].dia);
-	scanf (" %d", &l[i][j].mes);
-	scanf (" %d", &l[i][j].ano);
-	l[i][j].devolucaodia=0;
-	l[i][j].devolucaomes=0;
-	l[i][j].devolucaoano=0;
-	
-	*poss = *poss + 1;
-	if (j==15)
-	{
-		*pos = *pos + 1;
-		*poss=0;
-	}
-	*cod= *cod+1;
-	printf ("%d ",l[i][j].codigo);
-	return 3;
+	return 1;
 }
-
-int atualiza_cliente (cliente *c, int *pos)
-{
-	int i=0,cont=0,pessoa,submenu=0;
+//Funções de Cadastro
+int cadastrarCliente(cliente *c, int *i){
+	//Return 0 - Algum erro //Return 1 Cliente cadastrado com sucesso
 	
-	char aux[15];
-	scanf (" %d",&pessoa);
-	if (pessoa!=1 && pessoa!=2)
-	{
+	int tipo_cliente, valido; 
+	printf("Tipo do Cliente:");	scanf("%d",&tipo_cliente);
+	
+	valido=consultaTipoCliente(tipo_cliente); 
+	if(valido==0) //Não é um tipo válido
+		return 0;
+
+	c[*i].tipo_pessoa=tipo_cliente;
+	printf("CPF/CNPJ:"); 	scanf(" %s",c[*i].pessoa);
+	
+	valido=consultaCadastroCliente(c,&i);
+	if(valido==0) //O Cliente já está cadastrado
+		return 0;
+	
+	if(strlen("XXX.XXX.XXX-XX")==strlen(c[*i].pessoa)) //Confere se tipo da Pessoa digitado - CPF
+		tipo_cliente=1;
+	else if (strlen("XX.XXX.XXX/XXXX-XX")==strlen(c[*i].pessoa)) //Confere se tipo  da Pessoa digitado - CNPJ
+		tipo_cliente=2;
+
+	if(tipo_cliente!=c[*i].tipo_pessoa){ //Confere se tipo informado é igual ao tipo da Pessoa digitado
 		printf("ERRO: opcao invalida\n");
-		return 2;
-	}
-	scanf(" %s", aux);
-	
-	for (i=0;i<*pos;i++)
-	{
-		if (strcmp(aux,c[i].pessoa)==0) 
-		{
-			scanf (" %d",&submenu);	
-		if (submenu==1)
-		{
-		scanf(" %[^\n]%*c", c[i].e.rua);
-		scanf(" %d",&c[i].e.numero);
-		scanf(" %[^\n]%*c", c[i].e.bairro);
-		scanf(" %[^\n]%*c", c[i].e.cidade);
-		cont=1;
-		}
-		else if (submenu==2)
-		{
-		scanf(" %s", c[i].telefone);
-		cont=1;
-		}
-		else 
-		{
-			printf("ERRO: opcao invalida\n");
-			return 2;
-		}
-		}	
-	}
-	if (cont==0)
-	{
-		printf("ERRO: nao cadastrado\n");
-		return 1;
-	}
-	return 0;
-}
-
-int mostra_cliente (cliente *c, int *pos)
-{
-	int i=0,pessoa=0,cont=0;
-	char aux[15];
-	
-	scanf (" %d",&pessoa);
-	if (pessoa!=1 && pessoa!=2)
-	{
-		printf ("ERRO: opcao invalida\n");
-		return 2;
-	}
-	scanf(" %s", aux);
-
-	for (i=0;i<*pos;i++)
-	{
-		if (strcmp(aux,c[i].pessoa)==0) 
-		{
-			printf ("nome: %s\n",c[i].nome);
-			printf ("rua: %s\n",c[i].e.rua);
-			printf ("num: %d\n",c[i].e.numero);
-			printf ("bairro: %s\n",c[i].e.bairro);
-			printf ("cidade: %s\n",c[i].e.cidade);
-			printf ("telefone: %s\n",c[i].telefone);
-			cont =1;
-			break;
-		}
-	}
-	if (cont==0)
-	{
-		printf("ERRO: nao cadastrado\n");
-	}
-	return 0;
-}
-
-int mostra_locacao (locacao l[][5],cliente *c, int *pos,int *poss) 
-{
-	int i=0,j=0,k=0,cont=0;
-	int aux;
-	
-	scanf(" %d",&aux);
-
-	for (i=0;i<*pos;i++)
-	{
-		for (j=0;j<*poss;j++)
-		{
-			if (aux==l[i][j].codigo)
-			{
-				cont=1;
-				if (l[i][j].contador !=0)
-				{
-					for (k=0;k<*pos;k++)
-				{
-					if (strcmp(l[i][j].pessoa,c[k].pessoa)==0)
-					{
-						printf ("codigo da locacao: %d\n",l[i][j].codigo);
-						printf("cpf: %s\n",l[i][j].pessoa);
-						printf ("nome: %s\n",c[k].nome);
-						printf("renavam: %s \n",l[i][j].renavan); 
-						if (l[i][j].mes>=1 && l[i][j].mes<=9)
-						{
-							printf("data retirada: %d/0%d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano); 
-						}
-						else
-						{
-							printf("data retirada: %d/%d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano); 
-						}
-						printf ("data entrega: %02d/%02d/%02d\n",l[i][j].devolucaodia,l[i][j].devolucaomes,l[i][j].devolucaoano);
-						return 3;
-					}
-				}
-				}	
-			}
-		}
-	}
-	if (cont==0)
-	{
-		return 1;
-	}
-	return 2;
-}
-int locacao_cliente(cliente *c,locacao l[][5],int *pos,int *poss) 
-{
-	int i=0,j=0,aux2=0,cont=0,contt=0,k=0;
-	
-	char aux[15];
-	scanf(" %d", &aux2);
-	if (aux2!=1 && aux2!=2)
-	{
-		printf("ERRO: opcao invalida\n"); 
+		c[*i].tipo_pessoa=0; //limpa variável
 		return 0;
 	}
-	scanf(" %s", aux);
-	scanf(" %d", &aux2); 
-	for (i=0;i<*pos;i++)
-	{
-		for (j=0;j<*poss;j++)
-		{
-			if (strcmp(aux,l[i][j].pessoa)==0)
-			{
-				contt=1;
-				if (l[i][j].codigo==0)
-				{
-					printf ("ERRO: nada cadastrado\n");
-					return 3;
-				}
-				
-				if (aux2!=1 && aux2!=2 && aux2!=3)
-				{
-					printf ("ERRO: opcao invalida\n");
-					return 3;
-				}
-				else if (aux2==1)
-				{
-							
-							printf ("codigo da locacao: %d\n",l[i][j].codigo);
-							printf("cpf: %s\n",l[i][j].pessoa);
-							for (k=0;k<*pos;k++)
-							{
-								if (strcmp(c[k].pessoa,l[i][j].pessoa)==0)
-								{
-								printf ("nome: %s\n",c[k].nome);
-								}
-							}
-							printf("renavam: %s\n",l[i][j].renavan); 
-							printf("data retirada: %02d/%02d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano); 
-							printf("data entrega: %02d/%02d/%02d\n",l[i][j].devolucaodia,l[i][j].devolucaomes,l[i][j].devolucaoano); 
-							return 3;
-					
-				}
-				else if (aux2==2)
-				{
-					if (l[i][j].situacao==2)
-					{
-							printf ("codigo da locacao: %d\n",l[i][j].codigo);
-							printf("cpf: %s\n",l[i][j].pessoa);
-							for (k=0;k<*pos;k++)
-							{
-								if (strcmp(c[k].pessoa,l[i][j].pessoa)==0)
-								{
-								printf ("nome: %s\n",c[k].nome);
-								}
-							}
-							printf("renavam: %s\n",l[i][j].renavan); 
-							printf("data retirada: %02d/%02d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano); 
-							printf("data entrega: %02d/%02d/%02d\n",l[i][j].devolucaodia,l[i][j].devolucaomes,l[i][j].devolucaoano); 
-					}
-					else if (l[i][j].situacao==1) 
-					{
-							printf ("ERRO: nada cadastrado\n");
-							return 3;
-					}
-				}
-				else if (aux2==3)
-				{
-					if (l[i][j].situacao==1)
-					{
-							printf ("codigo da locacao: %d\n",l[i][j].codigo);
-							printf("cpf: %s\n",l[i][j].pessoa);
-							for (k=0;k<*pos;k++)
-							{
-								if (strcmp(c[k].pessoa,l[i][j].pessoa)==0)
-								{
-								printf ("nome: %s\n",c[k].nome);
-								}
-							}
-							printf("renavam: %s\n",l[i][j].renavan); 
-							printf("data retirada: %02d/%02d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano); 
-							printf("data entrega: %02d/%02d/%02d\n",l[i][j].devolucaodia,l[i][j].devolucaomes,l[i][j].devolucaoano); 
-							return 3;
-					}
-					else if (l[i][j].situacao==2)
-					{
-							printf ("ERRO: nada cadastrado\n");
-					}
-				}
-				cont =1;
-				break;
-			}
-		}
-	}
 
-	if (contt==0)
-	{
-		printf ("ERRO: nao cadastrado\n");
-		return 0;
-	}
-	if (cont==0)
-	{
-		printf ("ERRO: nenhuma locacao em aberto\n");
-		return 0;
-	}
-	return 3;
+	//Recebe entradas para cadastro
+	printf("Nome:");	scanf(" %[^\n]%*c", c[*i].nome);
+	printf("Endereço\nRua:"); 	scanf(" %[^\n]%*c", c[*i].e.rua);
+	printf("Número:");scanf(" %d",&c[*i].e.numero);
+	printf("Bairro:");scanf(" %[^\n]%*c", c[*i].e.bairro);
+	printf("Cidade:");scanf(" %[^\n]%*c", c[*i].e.cidade);
+	printf("Telefone:");scanf(" %s", c[*i].telefone);
+	c[*i].situacao=0; //Situação 0 é Cliente sem Locações em Aberto
+	*i = *i + 1; //Aumenta o número de clientes cadastrados
 	
+	return 1;
 }
-int lista(cliente *c,locacao l[][5],int *posss,int*pos,int *poss)
-{
-	int i=0,j=0,k=0,aux,cont=0;
-	scanf(" %d", &aux);
-	if (aux!=1 && aux!=2)
-	{
-		printf("ERRO: opcao invalida\n"); 
+int cadastrarCarro(carro *c, int *i){
+	//Return 0 - Algum erro //Return 1 Cliente cadastrado com sucesso
+	
+	int valido;
+	
+	printf("Renavan:");	scanf(" %s",c[*i].renavan);
+	
+	valido=consultaCadastroCarro(c,&i); 
+	if(valido==0) //O Carro já está cadastrado
+		return 0;
+	
+	printf("Categoria"); scanf(" %u",&c[*i].tipo_categoria);
+	valido=consultaTipoCategoria(c,&i); 
+	if(valido==0) //Tipo invalida
+		return 0;
+	
+	//Validação das cores
+	printf("Cor:");		scanf(" %u",&c[*i].tipo_cor);
+	if(c[*i].tipo_cor<1 || c[*i].tipo_cor>4){
+		printf("ERRO: opcao invalida\n");
 		return 0;
 	}
 	
-	for (k=0;k<*posss;k++)
-	{
-	for (i=0;i<*pos;i++)
-	{
-		for (j=0;j<*poss;j++)
-		{
-			if (strcmp(c[k].pessoa,l[i][j].pessoa)==0)
-			{
-				if (cont==0) 
-				{
-						printf ("codigo da locacao: %d\n",l[i][j].codigo);
-						printf("cpf: %s\n",l[i][j].pessoa);
-						printf ("nome: %s\n",c[k].nome);
-						printf("renavam: %s \n",l[i][j].renavan); 
-						if (l[i][j].mes>=1 && l[i][j].mes<=9)
-						{
-						printf("data retirada: %d/0%d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano);	
-						}
-						else
-						{
-							printf("data retirada: %d/%d/%d\n",l[i][j].dia,l[i][j].mes,l[i][j].ano);
-						}
-						printf ("data entrega: %02d/%02d/%02d\n",l[i][j].devolucaodia,l[i][j].devolucaomes,l[i][j].devolucaoano); //acho q aki muda
-						cont=1;
-				}										
-			}	
-			}	
-		}
-		cont=0;
-	}
-	return 0;
+	//Recebe entradas para cadastro
+	printf("Placa:");	scanf(" %s",c[*i].placa);
+	printf("Marca:");	scanf(" %[^\n]%*c", c[*i].marca);
+	printf("Modelo:");	scanf(" %[^\n]%*c", c[*i].modelo);
+	printf("Ano:");		scanf("%d",&c[*i].ano);
+	c[*i].situacao=0; //Carro não locado
+	*i = *i + 1; ////Aumenta o número de carros cadastrados
+	return 1;
 }
-int devolve (locacao l[][5],carro *car,cliente *c,categorias_u *cat,int *pos,int *poss,int *posss,int *pis,int *pjs,int *v,int *ve)
-{
-	int i=0,j=0,aux,cont=0,dia,mes,ano,k=0,z=0,cc=0,diaria=0,d=0,m=0,a=0,contt=0;
-	float x=0;
-	char aux2[15];
-	scanf(" %d", &aux);
-	if (aux!=1 && aux!=2)
-	{
-		printf("ERRO: opcao invalida\n"); 
-		return 4;
-	}
+int cadastrarCategoria(categoria *c, int *i){
 	
-	scanf(" %s", aux2);
-	for (i=0;i<*pos;i++)
-	{
-		if (strcmp (aux2,c[i].pessoa)==0)
-		{
-			cont=1;
-		}
-	}
-	if (cont==0)
-	{
-		printf("ERRO: nao cadastrado\n");
+	int valido;
+	
+	printf("Categoria:");	scanf(" %d",&c[*i].categoria); 
+	
+	valido=consultaCadastroCategoria(c,&i); 
+	if(valido==0) //A Categoria já está cadastrada
 		return 0;
-	}cont=0;
-	for (i=0;i<*pos;i++)
-	{
-		for (j=0;j<*pjs;j++)
-		{
-			if (strcmp(aux2,l[i][j].pessoa)==0) 
-		{
-			if (l[i][j].situacao==2)
-			{
-				contt=contt+1;
-				
-			}
-			
-		}
-		}
-	}
+		
+	valido=consultaTipoCategoria2(c,&i); 
+	if(valido==0) //Tipo invalida
+		return 0;
+	//Recebe entradas para cadastro
+	printf("Valor:");	scanf(" %f",&c[*i].valor);
+	printf("Pontos:");	scanf(" %d",&c[*i].pontos);
+	*i++;//Aumenta o número de categorias cadastradas
+	return 1;
+}
 	
-	for (i=0;i<*pos;i++)
-	{
-		for (j=0;j<*pjs;j++)
+int cadastrarLocacao(locacao l[][tam_locacao],cliente *cli,int *j,carro *car,int *z, categoria *cat, int k){
+	
+	char aux_renavan[15],aux_cliente[20];
+	int i=0, cont_cliente=0,aux_tipo,mark=0,cont=0,cont_car=0, valido;
+	
+	printf("Renavan:");	scanf(" %s",aux_renavan);
+	
+	//Busca Carro e vê se ele já está locado
+	for(cont=0; cont<*z;cont++){
+		if(strcmp(car[cont].renavan,aux_renavan)==0)
 		{
-			if (strcmp(aux2,l[i][j].pessoa)==0) 
-		{
-			cont =1;
-			
-			scanf(" %d", &dia);
-			scanf(" %d", &mes);
-			scanf(" %d", &ano);
-			if (ano == l[i][j].ano && mes == l[i][j].mes && dia == l[i][j].dia)
-			{
-				printf ("Locacao cancelada\n");
-				l[i][j].codigo=0; 
-				
-				return 0; 
-			}
-			if ((ano < l[i][j].ano) || (ano ==l[i][j].ano && mes< l[i][j].mes) ||( ano==l[i][j].ano && mes==l[i][j].mes && dia < l[i][j].dia))
-			{
-				printf("ERRO: data invalida\n");
-				
+			if(car[cont].situacao==1){
+				printf("ERRO: locacao em aberto\n");
 				return 0;
 			}
-			else
-			{
-				d=l[i][j].dia;
-				m=l[i][j].mes;
-				a=l[i][j].ano;
-				do
-				{
-					do
-					{
-						if (m==mes)
-						{
-							diaria=diaria+dia-1;
-							d=29;
-						}
-						if (l[i][j].mes==mes)
-						{
-							diaria=mes-l[i][j].mes-1;
-							d=29;
-							m=mes+1;
-							a=ano+1;
-						}
-						do
-						{
-							diaria++;
-							d++;
-						}while(d<30);
-						d=0;
-						m++;
-						
-					}while (m<=mes);
-					m=1;
-					a++;
-				}while(a<=ano);
-				
-				for (k=0;k<*poss;k++)
-				{
-					
-					if (strcmp(l[i][j].renavan,car[k].renavam)==0 && cc==0)
-					{
-						
-						for (z=0;z<*posss;z++)
-						{
-							
-							if(car[k].categoria==cat[z].c)
-							{
-								
-								l[i][j].situacao=2; 
-								printf("Valor devido: %.2f\n", cat[z].valor*diaria); 
-								if (cat[z].valor*diaria>=1000 &&cat[z].pontos>=1500) 
-								{
-									if (contt!=0)
-										x = (cat[z].pontos/1500)*50;
-									
-								}
-								printf("Desconto: %.2f\n", x); 
-								
-								l[i][j].devolucaodia=dia;
-								l[i][j].devolucaomes=mes;
-								l[i][j].devolucaoano=ano;
-								l[i][j].contador=0; 
-								cc=1;
-								v[k]=0;
-								printf("k:%d vk:%d",k,v[k]);
-								ve[k]=-2;
-								printf("ve%d\n",ve[k]);
-								//teste
-								strcpy(l[i][j].renavan," ");
-								strcpy(l[i][j].pessoa," ");
-								strcpy(c[k].pessoa," ");
-								return 0;
-					}
-				}
+			else{
+				mark=1;
+				cont_car=cont;
+				break;
 			}
-	}
-}
-			break;
-		}
 		}
 	}
-	if (cont==0)
-	{
-		printf("ERRO: nenhuma locacao em aberto\n");
-	}
-	return 4;
-}
-
-int frequencia (locacao l[][5],carro *car,int *pos,int *poss,int *posss)
-{
-	int i,j,x11=0,aux=0,vet[*posss]={0,0,0,0},v[*posss]={1,2,3,4},aux2=0;
-	
-	scanf (" %d",&aux);
-	if (aux!=1 && aux!=2)
-	{
-		printf ("Opcao invalida\n");
+	if(mark==0){ //Se achou o carro ou não
+		printf("ERRO: nao cadastrado\n");
 		return 0;
 	}
-	if (*pos==0)
-	{
-		i=*pos;
-		for (j=0;j<*poss;j++)
+	mark=0;
+	
+	printf("Tipo:");	scanf(" %d",&aux_tipo);
+	
+	valido=consultaTipoCliente(aux_tipo);
+	if(valido==0)
+		return 0;
+		
+	printf("CPF/CNPJ:");	scanf(" %s",aux_cliente);
+	
+	//Busca Cliente e vê se ele tem locação em aberto
+	for(cont=0; cont<*j;cont++){
+		if(strcmp(cli[cont].pessoa,aux_cliente)==0)
 		{
-			if(l[i][j].tipo_cliente==1 && aux==1)
-			{
-				if (l[i][j].contador==1)
-					vet[0]=vet[0]+1;
-				else if (l[i][j].contador==2)
-					vet[1]=vet[1]+1;
-				else if (l[i][j].contador==3)
-					vet[2]=vet[2]+1;
-				else if (l[i][j].contador==4)
-					vet[3]=vet[3]+1;
+			if(cli[cont].situacao==1){
+				printf("ERRO: locacao em aberto\n");
+				return 0;
 			}
-		}
-	}else 
-	{
-		for (i=0;i<*pos;i++)
-	{
-		for (j=0;j<*poss;j++)
-		{
-			if(l[i][j].tipo_cliente==1)
-			{
-				printf ("%d\n",l[i][j].codigo);
-				x11++;
+			else{
+				mark=1;
+				cont_cliente=cont;
+				break;
 			}
 		}
 	}
+	if(mark==0){//Se o Cliente está cadastro ou não
+		printf("ERRO: nao cadastrado\n");
+		return 0;
 	}
-	for (i=0; i<*posss-1; i++)
-	{       
-        if(vet[i]<vet[i+1])
+
+	for(cont=0; cont<tam_locacao;cont++){
+		if(strcmp(l[cont_cliente][cont].pessoa,aux_cliente)==0)
 		{
-          	 aux=vet[i+1];
-             vet[i+1]=vet[i];
-             vet[i]=aux;
-             
-             aux2=v[i+1];
-             v[i+1]=v[i];
-             v[i]=aux2;
-        }  }
-	for (i=0;i<*posss;i++)
-	{
-		if (v[i]==1) 
-			printf("Categoria hatch: %d\n", vet[i]);
-		else if (v[i]==2)
-			printf("Categoria sedan: %d\n", vet[i]);	
-		else if (v[i]==3)
-			printf("Categoria suv: %d\n", vet[i]);	
-		else if (v[i]==4)
-			printf("Categoria jipe: %d\n", vet[i]);
-	}return 0;
+			i++; //Conta quantidade de locações que cliente fez
+			break;
+		}
+	}
+	if(i==5){ //Cliente pode ter feito no máximo 5 locações
+		printf("ERRO: sem espaco\n");
+		return 0;
+	}
+	
+	//Recebe entradas para cadastro
+	printf("Data de retirada:\n");
+	printf("Dia:");	scanf(" %d",&l[cont_cliente][i].dia_retirada);
+	printf("Mês:");	scanf(" %d",&l[cont_cliente][i].mes_retirada);
+	printf("Ano:");	scanf(" %d",&l[cont_cliente][i].ano_retirada);
+	
+	//Preenche alguns áreas do cadastro
+	cli[cont_cliente].situacao=1; //Situação 1 é Cliente com Locação em Aberto
+	car[cont_car].situacao=1; //Carro locado
+	strcpy(l[cont_cliente][i].renavan,aux_renavan); 	//Copia o renavan para a locação
+	l[cont_cliente][i].tipo_pessoa=aux_tipo;			//Copia o tipo da pesso para a locação
+	strcpy(l[cont_cliente][i].pessoa,aux_cliente);	//Copia o CPF/CNPJ para a locação
+	strcpy(l[cont_cliente][i].nome,cli[cont_cliente].nome);	//Copia o nome do cliente para a locação
+	l[cont_cliente][i].codigo=k+1001;					//Soma o código de locação para cada cliente novo, começando em 1001
+	l[cont_cliente][i].dia_devolucao=0;				//Preenche o dia da devolução com 0
+	l[cont_cliente][i].mes_devolucao=0;				//Preenche o mês da devolução com 0
+	l[cont_cliente][i].ano_devolucao=0;				//Preenche o ano da devolução com 0
+	l[cont_cliente][i].situacao=1;					//Locação em aberto
+	l[cont_cliente][i].tipo_categoria=car[cont_car].tipo_categoria; //Copia o tipo da categoria para a locação
+	
+	printf("%d ",l[cont_cliente][i].codigo);
+	return 1;
 }
 
-int main ()
-{
-	const int c_cli = 15;
-	const int c_car =10;
-	const int  c_loc=5;
-	int c_cat =4;
-	cliente c[c_cli];
-	carro   car[c_car];
-	locacao	l[c_cli][c_loc];
-	categorias_u cat[c_cat];
-	int cont_c=0,cont_car=0,cont_cat=0,ret,cont_i=0,cont_j=0,vet[c_cli],cont_cod=0,vett[c_cli];
+//Funções de alteração de dados
+int devolverCarro(locacao l[][tam_locacao], int *i,cliente *cli,int *j,carro *car,int *z, categoria *cat){
+	
+	char aux_cliente[20];
+	int aux_tipo=0,mark=0,valido,cont_cliente,diaria=0;
+	
+	printf("Tipo:");	scanf(" %d",&aux_tipo);
+	
+	valido=consultaTipoCliente(aux_tipo);
+	if(valido==0)
+		return 0;
+		
+	printf("CPF/CNPJ:");	scanf("%s",aux_cliente);
+	
+	//Busca Cliente
+	for(int cont=0; cont<*j;cont++){
+		if(strcmp(cli[cont].pessoa,aux_cliente)==0)
+		{
+			mark=1;
+			cont_cliente=cont;
+			break;
+		}
+	}
+	if(mark==0){//Se o Cliente está cadastro ou não
+		printf("ERRO: nao cadastrado\n");
+		return 0;
+	}
+	
+	for (int cont_locacao=0;cont_locacao<tam_locacao;cont_locacao++){//Procura nas locações do cliente
+
+		if(l[cont_cliente][cont_locacao].situacao==1){ //Tem que ter locação em aberto
+			printf("Data devolução:\n");
+			printf("Dia:");	scanf("%d",&l[cont_cliente][cont_locacao].dia_devolucao);
+			printf("Mês:");	scanf("%d",&l[cont_cliente][cont_locacao].mes_devolucao);
+			printf("Ano:");	scanf("%d",&l[cont_cliente][cont_locacao].ano_devolucao);
+			
+			//Se a data de retirada e locação foram iguais, a locação deve ser cancelada
+			if(l[cont_cliente][cont_locacao].dia_devolucao==l[cont_cliente][cont_locacao].dia_retirada &&
+			l[cont_cliente][cont_locacao].mes_devolucao==l[cont_cliente][cont_locacao].mes_retirada && 
+			l[cont_cliente][cont_locacao].ano_devolucao==l[cont_cliente][cont_locacao].ano_retirada){
+				printf("Locacao cancelada\n");
+				//Como foi cancelada a data de devolução tem que ser 0/0/0
+				l[cont_cliente][cont_locacao].dia_devolucao=0; 
+				l[cont_cliente][cont_locacao].mes_devolucao=0;
+				l[cont_cliente][cont_locacao].ano_devolucao=0;
+				l[cont_cliente][cont_locacao].situacao=2; //Situação 2 é locação cancelada
+				
+				for(int cont_car=0;cont_car<*z;cont_car++){
+					if(strcmp(l[cont_cliente][cont_locacao].renavan,car[cont_car].renavan)==0)
+						car[cont_car].situacao=0; //Muda a situação, pois a locação não está mais em aberto
+				}
+				return 0;
+			}
+			//Validação da data
+			//Dia>=1 e Dia<=31			//Mês>=1 e Mês<=12
+			//Ano de devolução tem quer maior ou igual ao de retirada
+			//Se ano igual, mês de devolução tem quer ser maior ou igual ao de retirada
+			//Se ano e mês iguais, dia de devolução tem que ser maior ao de retirada
+			if((l[cont_cliente][cont_locacao].dia_devolucao<1 || l[cont_cliente][cont_locacao].dia_devolucao>31 
+			|| l[cont_cliente][cont_locacao].mes_devolucao>12 || l[cont_cliente][cont_locacao].mes_devolucao<1
+			)|| ((l[cont_cliente][cont_locacao].ano_devolucao<l[cont_cliente][cont_locacao].ano_retirada) || 
+			(l[cont_cliente][cont_locacao].ano_devolucao==l[cont_cliente][cont_locacao].ano_retirada 
+			&& l[cont_cliente][cont_locacao].mes_devolucao<l[cont_cliente][cont_locacao].mes_retirada)  
+			|| ((l[cont_cliente][cont_locacao].ano_devolucao==l[cont_cliente][cont_locacao].ano_retirada 
+			&& l[cont_cliente][cont_locacao].mes_devolucao==l[cont_cliente][cont_locacao].mes_retirada 
+			&& l[cont_cliente][cont_locacao].dia_devolucao<l[cont_cliente][cont_locacao].dia_retirada)))){
+				printf("ERRO: data invalida\n");
+				//Como data invalida, não foi devolvido e nem cancelada, assim a data de devolução tem que ser 0/0/0
+				l[cont_cliente][cont_locacao].dia_devolucao=0;
+				l[cont_cliente][cont_locacao].mes_devolucao=0;
+				l[cont_cliente][cont_locacao].ano_devolucao=0;
+				for(int cont_car=0;cont_car<*z;cont_car++){
+					if(strcmp(l[cont_cliente][cont_locacao].renavan,car[cont_car].renavan)==0)
+						car[cont_car].situacao=0;//Muda a situação, pois a locação não está mais em aberto
+				}
+				return 0;
+			}
+			//Se chegou aqui a locação irá ser fechada
+			l[cont_cliente][cont_locacao].situacao=0; //Situação 0 sem locação em aberto
+			cli[cont_cliente].situacao=0; //Situação 0 sem locação em aberto
+			for(int cont_car=0;cont_car<*z;cont_car++){
+				if(strcmp(l[cont_cliente][cont_locacao].renavan,car[cont_car].renavan)==0){ //Busca carro locado
+					car[cont_car].situacao=0; //Carro foi devolvido, não está locado
+										
+					//Cálculo do tempo de locação (Devolução-retirada)
+					diaria=(l[cont_cliente][cont_locacao].ano_devolucao-l[cont_cliente][cont_locacao].ano_retirada)*365;
+					if(l[cont_cliente][cont_locacao].ano_devolucao>l[cont_cliente][cont_locacao].ano_retirada)//Se ano de devolução é maior
+						diaria=diaria-(l[cont_cliente][cont_locacao].mes_retirada-l[cont_cliente][cont_locacao].mes_devolucao)*30;
+					else //Se ano de devolução é igual
+						diaria=diaria+(l[cont_cliente][cont_locacao].mes_devolucao-l[cont_cliente][cont_locacao].mes_retirada)*30;
+					if(l[cont_cliente][cont_locacao].mes_devolucao>l[cont_cliente][cont_locacao].mes_retirada) //Se mês é maior
+						diaria=diaria-(l[cont_cliente][cont_locacao].dia_retirada-l[cont_cliente][cont_locacao].dia_devolucao);
+					else //Se mês é igual
+						diaria=diaria+(l[cont_cliente][cont_locacao].dia_devolucao-l[cont_cliente][cont_locacao].dia_retirada);
+					for(int cont_cat=0;cont_cat<tam_categoria;cont_cat++){ //Busca categoria do carro (1-4)
+						if(car[cont_car].tipo_categoria==cat[cont_cat].categoria){ 
+							float valor=0;
+							valor =diaria*cat[cont_cat].valor;
+							printf("Valor devido: %.2f\n", valor);//Valor de pagamento é total de dias * valor da categoria do carro
+							float x=0;
+							if(cont_locacao>0){
+								for(int cont_car=0;cont_car<*z;cont_car++){
+									if(strcmp(l[cont_cliente][cont_locacao-1].renavan,car[cont_car].renavan)==0){
+										for(int cont_cat=0;cont_cat<tam_categoria;cont_cat++){
+											if (cat[cont_cat].pontos>=1000) //Para ter desconto os pontos da categoria tem que ser maior que 1000
+											{
+												x = (cat[cont_cat].pontos/1000)*50; //Cálculo do desconto
+												if(x>0.3*valor) //Valor do desconto não pode ser superior à 30% do valor total
+													x=(valor)*0.3;
+											}
+										}
+									}
+								}
+							}
+							printf("Desconto: %.2f\n", x);	
+						}
+					}
+					break;
+				}
+			}
+			return 1; //Carro devolvido com sucesso
+		}
+	}
+	printf("ERRO: nenhuma locacao em aberto\n");	
+	return 0;
+}
+int atualizarCliente(cliente *c, int *i){
+	
+	int tipo, valido, op;
+	char pessoa[20];
+	
+	printf("Tipo:");	scanf("%d",&tipo);
+	
+	valido=consultaTipoCliente(tipo);
+	if(valido==0)
+		return 0;
+	
+	printf("CPF/CNPJ:");	scanf(" %s",pessoa);
+	
+	for(int j=0;j<*i;j++){
+		if(strcmp(c[j].pessoa,pessoa)==0){ //Se Pessoa está cadastrada
+
+			printf("Opção: (1)Atualizar endereço ou (2)Atualizar telefone");	scanf("%d",&op);
+			if(op==1){
+				printf("Endereço:\n");
+				printf("Rua:");		scanf(" %[^\n]%*c", c[j].e.rua);
+				printf("Número:");	scanf(" %d",&c[j].e.numero);
+				printf("Bairro:");	scanf(" %[^\n]%*c", c[j].e.bairro);
+				printf("Cidade:");	scanf(" %[^\n]%*c", c[j].e.cidade);
+				return 1;
+			}
+			else if(op==2){
+				printf("Telefone:");	scanf(" %s", c[j].telefone);
+				return 1;
+			}
+			printf("ERRO: opcao invalida\n");
+			return 0;
+		}	
+	}
+	printf("ERRO: nao cadastrado\n");	
+	return 0;
+}
+
+//Funções de consultar e listar
+int exibirLocacao (locacao l[][5], int *j, int *z){ //Printar dados consultados
+	printf("codigo da locacao: %d\n",l[*j][*z].codigo);
+	if(strlen("XXX.XXX.XXX-XX")==strlen(l[*j][*z].pessoa))//Vê se é CPF
+		printf("cpf: %s\n",l[*j][*z].pessoa);
+	else if (strlen("XX.XXX.XXX/XXXX-XX")==strlen(l[*j][*z].pessoa)) //Ou CNPJ
+		printf("cnpj: %s\n",l[*j][*z].pessoa);
+	printf("nome: %s\n", l[*j][*z].nome);
+	printf("renavam: %s\n",l[*j][*z].renavan);
+	printf("data retirada: %02d/%02d/%02d\n",l[*j][*z].dia_retirada,l[*j][*z].mes_retirada,l[*j][*z].ano_retirada);
+	printf("data entrega: %02d/%02d/%02d\n",l[*j][*z].dia_devolucao,l[*j][*z].mes_devolucao,l[*j][*z].ano_devolucao);
+	return 0;
+}
+
+int consultarCliente(cliente *c, int *i){
+	
+	int tipo,valido;
+	char pessoa[50];
+	
+	printf("Tipo:");	scanf("%d",&tipo);
+	
+	valido=consultaTipoCliente(tipo);
+	if(valido==0)
+		return 0;
+	
+	printf("CPF/CNPJ:");	scanf(" %s",pessoa);
+	
+	for(int j=0;j<*i;j++){
+		if(strcmp(c[j].pessoa,pessoa)==0){//Se Pessoa está cadastrada
+			printf("nome: %s\n",c[j].nome);
+			printf("rua: %s\n",c[j].e.rua);
+			printf("num: %d\n",c[j].e.numero);
+			printf("bairro: %s\n",c[j].e.bairro);
+			printf("cidade: %s\n",c[j].e.cidade);
+			printf("telefone: %s\n",c[j].telefone);
+			return 1;
+		}
+	}
+	printf("ERRO: nao cadastrado\n");
+	return 0;
+}
+
+int consultarLocacao(locacao l[][5], int *i){
+	
+	int codigo;
+	printf("Código da locação:");	scanf("%d",&codigo);
+	
+	for(int j=0;j<*i;j++){
+		for(int z=0;z<tam_locacao;z++){
+			if(codigo==l[j][z].codigo){
+				if(l[j][z].situacao==2){//Vê se locação foi cancelada
+					printf("ERRO: locacao foi cancelada\n");
+					return 0;
+				}
+				exibirLocacao(l,&j,&z);
+				return 1;
+			}
+		}
+	}
+	printf("ERRO: nao cadastrado\n");
+	return 0;
+}
+int listarLocacoesCliente(locacao l[][5], int *i){
+	
+	char nome[20];
+	int tipo, valido, mark=0, op;
+	
+	printf("Tipo:");	scanf("%d",&tipo);
+	
+	valido=consultaTipoCliente(tipo);
+	if(valido==0)
+		return 0;
+		
+	printf("CPF/CNPJ:");	scanf(" %s",nome);
+
+	for(int j=0;j<*i;j++){
+		for(int z=0;z<tam_locacao;z++){
+			if(strcmp(nome,l[j][z].pessoa)==0){ //Vê se pessoa está cadastrada
+				printf("%s %s\n",nome,l[j][z].pessoa);
+				mark=1;
+				break;
+			}
+		}
+	}
+	if(mark==1){ //Pessoa está cadastrada
+		printf("Opção: (1)Todas locações, (2)Encerradas ou (3)Em aberto");	scanf("%d",&op);
+		if(op>3 || op<1){
+			printf("ERRO: opcao invalida\n");
+			return 0;
+		}
+		for(int j=0;j<*i;j++){
+			for(int z=0;z<tam_locacao;z++){
+				if(op==1){
+					if(strcmp(nome,l[j][z].pessoa)==0 &&l[j][z].situacao!=2){//Todas locações, menos as canceladas
+						exibirLocacao(l,&j,&z);
+						return 1;
+					}
+				}
+				else if(op==2){
+					if(strcmp(nome,l[j][z].pessoa)==0 && l[j][z].situacao==0){//Locações encerradas
+						exibirLocacao(l,&j,&z);
+						return 1;
+					}
+				}
+				else{
+					if(strcmp(nome,l[j][z].pessoa)==0 && l[j][z].situacao==1){//Locações em aberto
+						exibirLocacao(l,&j,&z);
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	printf("ERRO: nao cadastrado\n");
+	return 0;
+}
+
+int listarLocacoesAbertas(locacao l[][5], int *i){
+	
+	int tipo,valido,mark=0;
+	
+	printf("Tipo:");	scanf("%d",&tipo);
+	
+	valido=consultaTipoCliente(tipo);
+	if(valido==0)
+		return 0;
+		
+	for(int j=0;j<*i;j++){
+		for(int z=0;z<tam_locacao;z++){
+			if(1==l[j][z].situacao && l[j][z].codigo>1000){ //Locação aberta e códigos são válidos apenas se maior que 1000
+				exibirLocacao(l,&j,&z);
+				mark=1;
+			}
+		}
+	}
+	if(mark!=0) //Listagem foi um sucesso
+		return 1;
+		
+	printf("ERRO: nenhum dado cadastrado\n");
+	return 0;
+}
+//Outras funções
+int frequenciaLocacaoCategoria(locacao l[][5],carro *c,categoria *cat, int *i){
+	
+	int tipo,aux,valido,vetor[4]={0,0,0,0},v[4]={1,2,3,4},aux2;
+	
+	scanf("%d",&tipo);
+	valido=consultaTipoCliente(tipo);
+	if(valido==0)
+		return 0;
+		
+	int j=0,z=0,p=0,teste=0;
+
+	for(j=0;j<15;j++){
+		for(z=0;z<tam_locacao;z++){
+			if(l[j][z].tipo_pessoa==tipo &&l[j][z].situacao!=2) //Vê se o tipo é compatível e se a locação não foi cancelada
+				vetor[l[j][z].tipo_categoria-1]++; //Soma +1, na posição correspondente a categoria - Posição 0 = Categoria 1, e é a mesma lógica pro resto
+		}
+	}
+
+	for (int i=0; i<tam_categoria-1; i++) //Irá ordenar o vetor em ordem crescente
+	{       
+        if(vetor[i]<vetor[i+1])
+		{
+          	 aux=vetor[i+1];
+             vetor[i+1]=vetor[i];
+             vetor[i]=aux;
+             
+             aux2=v[i+1]; //Também irá o vetor correspondente as categorias (1 a 4), afim de auxiliar na exibição
+             v[i+1]=v[i];
+             v[i]=aux2;
+        }  
+	}
+	for (int i=0;i<4;i++) //Exibição das frequências da categoria em ordem crescente
+	{
+		if (v[i]==1) 
+			printf("Categoria hatch: %d\n", vetor[i]);
+		else if (v[i]==2)
+			printf("Categoria sedan: %d\n", vetor[i]);	
+		else if (v[i]==3)
+			printf("Categoria suv: %d\n", vetor[i]);	
+		else if (v[i]==4)
+			printf("Categoria jipe: %d\n", vetor[i]);
+	}
+	return 0;
+}
+
+int main(){
+	
+	setlocale(LC_ALL, "Portuguese");
+	
+	int retorno,cont_cliente=0,cont_car=0,cont_cat=0,contando=0,cont_loc=0,tam_matriz=0;
 	union opcao op;
-	do 
+	
+	cliente c[tam_cliente];
+	carro car[tam_carro];
+	categoria cat[tam_categoria];
+	locacao loc[tam_cliente][tam_locacao];
+
+	//Limpando lixos de memória
+	for(int i=0;i<tam_cliente;i++)
+		strcpy(c[i].pessoa," ");
+	
+	for(int i=0;i<tam_categoria;i++)
+		for(int j=0;j<tam_locacao;j++)
+			loc[i][j].codigo=0;
+	
+	do 	
 	{
-		scanf (" %d",&op.x);			
-		switch (op.x)
-	{
-		case 1:	
+		printf("-------------------------------------------\n");
+		printf("1-Cadastro de Cliente\n");
+		printf("2-Atualiza cliente\n");
+		printf("3-Lista os dados de um dado cliente\n");
+		printf("4-Cadastro de Carro\n");
+		printf("5-Cadastro de Dados da Categoria\n");
+		printf("6-Cadastro de Locação\n");
+		printf("7-Devolve Carro\n");
+		printf("8-Lista dados de uma determinada locação\n");
+		printf("9-Lista locações de um dado cliente\n");
+		printf("10-Lista locações em aberto\n");
+		printf("11-Frequência de locação por categoria\n");
+		printf("0-Sair\n");
+		printf("-------------------------------------------\n");	
+		printf("Digite uma opção:");
+		scanf (" %d",&op.x);
+		switch(op.x){
+		case 1:
 			{
-				if (cont_c<c_cli)
-				{
-					ret = cadastra_cliente (c,&cont_c,l);
-					if (ret==0)
-					{
-						printf("ERRO: ja cadastrado\n");
-					}
-					else if (ret==2)
-					{
-						printf("ERRO: opcao invalida\n");
-						break;
-					}
-					else
-					{
+				if(cont_cliente<tam_cliente){
+					retorno = cadastrarCliente(c,&cont_cliente);
+					if(retorno ==1)
 						printf("Cadastrado com Sucesso\n");
-					}
 				}
-				else printf("ERRO: sem espaco\n");
-				break;
-			}
-		case 2: 
-			{
-				ret = atualiza_cliente(c,&cont_c);
-				if (ret==0)
-				{
-					printf("Cadastrado com Sucesso\n");
-				}
-				break; 
-			}
-		case 3:	
-			{
-				mostra_cliente (c,&cont_c);
-				break;
-			}
-		case 4: 
-			{
-				if (cont_car<c_car)
-				{
-					ret = cadastra_carro (car,&cont_car);
-					if (ret==0)
-					{
-						printf("ERRO: ja cadastrado\n");
-					}
-					else if (ret==2)
-					{
-						printf("ERRO: opcao invalida\n");
-						break;
-					}
-					else printf("Cadastrado com Sucesso\n");
-				}
-				else printf("ERRO: sem espaco\n");
-				break;
-			}
-		case 5: 
-			{
-				if (cont_cat<c_cat)
-				{
-					ret =cadastra_categoria(cat,&cont_cat); 
-					if (ret==0)
-					{
-						break;
-					}
-					if (ret==2)
-					{
-						printf("ERRO: opcao invalida\n");
-						break;
-					}
-					else printf("Cadastrado com Sucesso\n"); break;
-				}
-				else printf("ERRO: opcao invalida\n"); break;
-			}
-		case 6: 
-			{
-				ret = cadastra_loc(l,&cont_i,&cont_j,c,car,vet,&cont_cod,vett,&cont_c,&cont_car);
-				if (ret==0)
-				{
-					printf("ERRO: nao cadastrado\n");
-					break;
-				}
-				else if (ret==2)
-				{
-					printf("ERRO: opcao invalida\n");
-					break;
-				}
-				else if (ret==1)
-				{
+				else
 					printf("ERRO: sem espaco\n");
+			
+				break;
+			}
+		case 2:
+			{
+				retorno = atualizarCliente(c,&cont_cliente);
+				if(retorno ==1)
+						printf("Cadastrado com Sucesso\n");
+				break;
+			}
+		case 3:
+			{
+				retorno = consultarCliente(c,&cont_cliente);
+				break;
+			}
+		case 4:
+			{
+				if(cont_car<tam_carro){
+					retorno = cadastrarCarro(car,&cont_car);
+					if(retorno ==1)
+						printf("Cadastrado com Sucesso\n");
 				}
-				else if (ret==3)
-				{
-					printf("cadastrado com sucesso\n");
+				else
+					printf("ERRO: sem espaco\n");
+				break;
+			}
+		case 5:
+			{
+				cont_cat=contando;
+				retorno = cadastrarCategoria(cat,&cont_cat);
+					if(retorno ==1){
+						printf("Cadastrado com Sucesso\n");
+						contando++;
 				}
 				break;
 			}
-		case 7: 
+		case 6:
 			{
-				ret =devolve (l,car,c,cat,&cont_c,&cont_car,&cont_cat,&cont_i,&cont_j,vet,vett);
+				if(tam_matriz<15*5){
+					retorno = cadastrarLocacao(loc,c,&cont_cliente,car,&cont_car,cat,tam_matriz);
+					if(retorno ==1){
+						printf("Cadastrado com Sucesso\n");
+						tam_matriz=tam_matriz+1;
+					}
+				}
+				else
+					printf("ERRO: sem espaco\n");
+
+				break;
+			}
+		case 7:
+			{
+				devolverCarro(loc,&cont_loc,c,&cont_cliente,car,&cont_car,cat);
 				break;
 			}
 		case 8:
 			{
-				ret =mostra_locacao (l,c,&cont_c,&cont_j); 
-				if (ret==1)
-				{
-					printf("ERRO: nao cadastrado\n");
-				}
-				if (ret==2)
-				{
-					printf("ERRO: locacao foi cancelada\n");
-				}
+				consultarLocacao(loc,&cont_cliente);
 				break;
 			}
-		case 9: 
+		case 9:
 			{
-				locacao_cliente(c,l,&cont_c,&cont_j);
+				listarLocacoesCliente(loc,&cont_cliente);
 				break;
 			}
-		case 10: 
+		case 10:
 			{
-				lista(c,l,&cont_car,&cont_c,&cont_j);
+				listarLocacoesAbertas(loc,&cont_cliente);
 				break;
 			}
 		case 11:
 			{
-				frequencia (l,car,&cont_i,&cont_j,&c_cat); 
+				frequenciaLocacaoCategoria(loc,car,cat,&cont_cliente);
 				break;
 			}
 		case 0:
-			{	
+			{
+				printf("Saindo...");
 				break;
 			}
-		default: {
-			printf("ERRO: opcao invalida\n"); 
-			break;
-		}
+		default:
+			{
+				printf("ERRO: opcao invalida\n");
+				break;
+			}
 	}
-	}while (op.x!=0);
+		printf("\n");
+	} while (op.x!=0);		
 }
